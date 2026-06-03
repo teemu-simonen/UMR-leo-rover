@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  talker:
+    image: ghcr.io/haitomatic/jaska_dev:base
+    container_name: jaska_talker
+    environment:
+      - ROS_DOMAIN_ID=42
+      - RMW_IMPLEMENTATION=rmw_cyclonedx_cpp
+    command: >
+      bash -c "
+        source /opt/ros/jazzy/setup.bash &&
+        ros2 run demo_nodes_cpp talker
+      "
+    networks:
+      - ros2_net
+    restart: unless-stopped
+
+  listener:
+    image: ghcr.io/haitomatic/jaska_dev:base
+    container_name: jaska_listener
+    environment:
+      - ROS_DOMAIN_ID=42
+      - RMW_IMPLEMENTATION=rmw_cyclonedx_cpp
+    command: >
+      bash -c "
+        source /opt/ros/jazzy/setup.bash &&
+        ros2 run demo_nodes_py listener
+      "
+    networks:
+      - ros2_net
+    depends_on:
+      - talker
+    restart: unless-stopped
+
+networks:
+  ros2_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

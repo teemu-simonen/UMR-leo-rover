@@ -1,0 +1,21 @@
+rosbags/*
+outputs/*
+*.tar
+*.zip
+*.pcd
+*.las
+*.laz
+
+!rosbags/.keep
+!outputs/.keep
+
+ros2_dev/build/
+ros2_dev/install/
+ros2_dev/log/
+
+# Ignore VS Code local workspace databases
+.vscode/
+*.db
+
+# Ignore heavy demonstration GIFs inside packages
+*.gif

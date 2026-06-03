@@ -1,0 +1,50 @@
+# Set base image - using camera image with ZED SDK
+FROM ghcr.io/haitomatic/jaska-dev:camera
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# Install X11 apps for GUI testing and croc for file transfer
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    x11-apps \
+    curl \
+    && curl https://getcroc.schollz.com | bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create working directory
+WORKDIR /Jaska
+
+# Copy Python dependencies (nicegui, etc.)
+COPY requirements.txt .
+
+# Install ZED Python API dependencies
+# Pin numpy to <1.28.0 to avoid conflicts with scipy
+RUN pip3 install --no-cache-dir cython "numpy>=1.21.6,<1.28.0" pyopengl opencv-python
+
+# Install ZED Python API from the SDK installation
+RUN cd /usr/local/zed && python3 get_python_api.py
+
+# Install requirements.txt
+RUN pip3 install --no-cache-dir -r /Jaska/requirements.txt
+
+# Copy all script files
+COPY scripts/camera_test.py .
+COPY scripts/record_svo2_zedx.py .
+COPY scripts/record_svo2_zedx_with_xsens_xda.py .
+
+# Add application path to PYTHONPATH
+ENV PYTHONPATH="/Jaska:${PYTHONPATH}"
+
+# Fix NVIDIA Argus JPEG symbol conflict - use NVIDIA's hardware-accelerated JPEG library
+# This library provides jpeg_set_hardware_acceleration_parameters_enc/dec functions
+ENV LD_PRELOAD=/usr/lib/aarch64-linux-gnu/nvidia/libnvjpeg.so
+
+WORKDIR /Jaska
+
+# Disable the entrypoint from base images
+ENTRYPOINT []
+
+# Run the camera test script
+CMD [ "/usr/local/zed/tools/ZED_Explorer" ]

@@ -1,0 +1,74 @@
+ARG L4T_VERSION=l4t-r36.4.0
+ARG IMAGE_NAME=dustynv/ros:jazzy-desktop-r36.4.0-cu128-24.04
+
+FROM ${IMAGE_NAME}
+
+ARG ZED_SDK_MAJOR=5
+ARG ZED_SDK_MINOR=1
+ARG L4T_MAJOR_VERSION=36
+ARG L4T_MINOR_VERSION=4
+ARG L4T_PATCH_VERSION=4
+ARG ROS2_DIST=jazzy
+
+#This environment variable is needed to use the streaming features on Jetson inside a container
+ENV LOGNAME=root
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PIP_INDEX_URL=https://pypi.jetson-ai-lab.io/jp6/cu128
+RUN apt-get update -y || true ; apt-get install --no-install-recommends \
+      lsb-release \
+      wget \
+      less \
+      zstd \
+      udev \
+      sudo \
+      net-tools \
+      iputils-ping \
+      v4l-utils \
+      libnvidia-egl-wayland1 \
+      apt-transport-https -y && \
+    # Fix ROS2 GPG key
+    curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null && \
+    apt-get update && \
+    # Install the ZED SDK
+    echo "# R${L4T_MAJOR_VERSION} (release), REVISION: ${L4T_MINOR_VERSION}.${L4T_PATCH_VERSION}" > /etc/nv_tegra_release ; \
+    wget -q --no-check-certificate -O ZED_SDK_Linux.run https://download.stereolabs.com/zedsdk/${ZED_SDK_MAJOR}.${ZED_SDK_MINOR}/l4t${L4T_MAJOR_VERSION}.${L4T_MINOR_VERSION}/jetsons && \
+    chmod +x ZED_SDK_Linux.run ; ./ZED_SDK_Linux.run silent skip_drivers && \
+    rm -rf /usr/local/zed/resources/* && \
+    rm -rf ZED_SDK_Linux.run && \
+    rm -rf /var/lib/apt/lists/*
+
+#This symbolic link is needed to use the streaming features on Jetson inside a container
+RUN ln -sf /usr/lib/aarch64-linux-gnu/tegra/libv4l2.so.0 /usr/lib/aarch64-linux-gnu/libv4l2.so
+
+# Install the ZED ROS2 Wrapper
+WORKDIR /root/ros2_ws/src
+RUN git clone -b jazzy_5.1 https://github.com/stereolabs/zed-ros2-wrapper.git && \
+    git clone -b master https://github.com/stereolabs/zed-ros2-interfaces.git
+
+# Build the dependencies
+WORKDIR /root/ros2_ws
+RUN apt-get update && \
+    # Remove the newer OpenCV version that conflicts with Ubuntu packages
+    apt-get remove -y --purge opencv-* || true && \
+    apt-get autoremove -y && \
+    # Install dependencies via rosdep (this will install compatible OpenCV 4.6.0)
+    rosdep install --from-paths src --ignore-src -r -y
+
+# Build the ZED ROS2 Wrapper
+RUN /bin/bash -c "\
+  # Source ROS2 environment before building (critical for finding all packages)
+  source /opt/ros/${ROS2_DIST}/install/setup.bash && \
+  source /opt/ros/${ROS2_DIST}/setup.bash && \
+  # Build the ZED ROS2 wrapper with proper environment
+  colcon build --symlink-install --cmake-args=-DCMAKE_BUILD_TYPE=Release" && \
+  rm -rf /var/lib/apt/lists/*
+
+# Setup environment variables
+WORKDIR /root/ros2_ws
+COPY ros_entrypoint_camera.sh /sbin/ros_entrypoint.sh
+RUN sudo chmod 755 /sbin/ros_entrypoint.sh
+
+ENV ROS_DISTRO=${ROS2_DIST}
+ENTRYPOINT ["/sbin/ros_entrypoint.sh"]
+CMD ["bash"]

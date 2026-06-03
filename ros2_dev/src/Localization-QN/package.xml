@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>localization_qn</name>
+  <version>0.0.0</version>
+
+  <description>
+    This repository is a map-based localization implementation combining FAST-LIO2 with Quatro+Nano-GICP
+  </description>
+  <maintainer email="eungchang_mason@kaist.ac.kr">Eungchang Mason Lee</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>rosbag2_cpp</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>pcl_ros</depend>
+  <depend>pcl_conversions</depend>
+  <depend>nano_gicp</depend>
+  <depend>quatro</depend>
+  <depend>teaserpp</depend>
+
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
