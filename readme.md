@@ -16,7 +16,32 @@ You only need two things installed on your host machine:
 
 ## 🛠️ Installation
 
-**1. Clone this repository:**
+**1. Clone this repository to your dev pc:**
 ```bash
-git clone [https://github.com/YOUR_USERNAME/leo_rover_slam.git](https://github.com/YOUR_USERNAME/leo_rover_slam.git)
+git clone https://github.com/teemu-simonen/UMR-leo-rover.git
 cd leo_rover_slam
+```
+
+## Usage
+
+### 1. Record a Lidar-rosbag using Leo-Rover:**
+**SSH into Leo-Rover Jetson Orin Nano:**
+```bash
+ssh iot@192.168.1.200
+```
+
+**Start recording Lidar-data and save it into a rosbag:**
+
+```bash
+ros2 launch unitree_lidar_ros2 launch.py record:=true rosbag_name:=your rosbag name
+```
+- ros2 launch unitree_lidar_ros2 launch.py - launch the Lidar
+- record:=true - Specify if you want to record a rosbag, set to false if no rosbag
+- rosbag_name:=<our rosbag name - specify rosbag name
+
+### 2. Copy the rosbag and run mapping pipeline
+**Run the following commands from dev pc**
+**Copy the rosbag**
+```bash
+scp -r iot@192.168.1.200:~/<filepath to rosbag>
+```
