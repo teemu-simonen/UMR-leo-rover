@@ -50,8 +50,8 @@ class UnifiedExporter(Node):
         # --- Subscribers ---
         self.gps_sub = self.create_subscription(NavSatFix, "/fix", self.gps_callback, 10)
         self.get_logger().info("Subscried to /fix")
-        self.odom_sub = self.create_subscription(Odometry, "/aft_mapped_to_init", self.odom_callback, 10)
-        self.get_logger().info("Subscried to /aft_mapped_to_init")
+        self.odom_sub = self.create_subscription(Odometry, "/kiss/odometry", self.odom_callback, 10)
+        self.get_logger().info("Subscried to /kiss/odometry")
 
     def odom_callback(self, msg):
         # 1. Update our current high-precision LiDAR location tracking

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import NavSatFix
@@ -6,14 +8,15 @@ from pyproj import Transformer
 from pathlib import Path
 import math
 import shutil
+import json
 
 class UnifiedExporter(Node):
     def __init__(self):
         super().__init__("unified_exporter_node")
-        self.get_logger().info("Unified Data Exporter Started. Full Georeferencing Hacks Active.")
+        self.get_logger().info("GPS and ODOMETRY data exporting ACTIVE")
         
-        # --- Setup Paths ---
-        self.base_dir = Path("~/lidar/outputs").expanduser()
+        # --- Setup File Paths ---
+        self.base_dir = Path("/home/koneauto3/leo_rover_slam/outputs")
         self.gps_dir = self.base_dir / "gps_dir"
         self.odom_path = self.base_dir / "odometry.txt"
 
@@ -32,7 +35,7 @@ class UnifiedExporter(Node):
         self.odom_buffer = []  
         self.gps_history = []  
         self.last_odom_stamp = None
-        self.min_time_between_odom = 0.2 # Roughly 5Hz Odometry downsampling
+        self.min_time_between_odom = 0.2 # Get odometry data every 0.2 sec/5Hz
         
         # Origin Variables for Local Translation
         self.origin_x = None
@@ -46,7 +49,9 @@ class UnifiedExporter(Node):
 
         # --- Subscribers ---
         self.gps_sub = self.create_subscription(NavSatFix, "/fix", self.gps_callback, 10)
-        self.odom_sub = self.create_subscription(Odometry, "/aft_mapped_to_init", self.odom_callback, 10)
+        self.get_logger().info("Subscried to /fix")
+        self.odom_sub = self.create_subscription(Odometry, "/kiss/odometry", self.odom_callback, 10)
+        self.get_logger().info("Subscried to /kiss/odometry")
 
     def odom_callback(self, msg):
         # 1. Update our current high-precision LiDAR location tracking
@@ -81,7 +86,7 @@ class UnifiedExporter(Node):
         self.gps_history.append(gps_stamp)
 
         # 1. Process Raw GPS data into EPSG:3879 Meters
-        raw_x, raw_y = self.transformer.transform(msg.longitude, msg.latitude)
+        raw_x, raw_y, raw_z = self.transformer.transform(msg.longitude, msg.latitude, msg.altitude)
         
         # Hardcode realistic RUTX11 errors to prevent algorithm panic
         std_x = 5.0
@@ -94,6 +99,17 @@ class UnifiedExporter(Node):
             self.origin_y = raw_y
             self.origin_z = msg.altitude
             self.get_logger().info(f"Origin locked at: {raw_x:.2f}, {raw_y:.2f} (EPSG:3879)")
+
+            # -----------GPS Coordinate JSON---------------
+            origin_data = {
+                "offset_easting": raw_x,
+                "offset_northing": raw_y,
+                "offset_altitude": raw_z,
+                "epsg": "3879"
+            }
+            metadata_path = self.base_dir / "origin_metadata.json"
+            with open(metadata_path, "w") as f:
+                json.dump(origin_data, f, indent=4)
 
         # 3. Get the local translation (to prevent 32-bit float point cloud collapse)
         raw_x_local = raw_x - self.origin_x

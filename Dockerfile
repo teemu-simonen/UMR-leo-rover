@@ -1,7 +1,7 @@
 # 1. Start with the official ROS 2 Jazzy desktop image
 FROM osrf/ros:jazzy-desktop
 
-# 2. Install basic Linux utilities, ROS dependencies, and tbb
+# 2. Install basic Linux utilities, ROS dependencies, RTAB-Map, and TBB
 RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-colcon-common-extensions \
@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     ros-jazzy-pcl-ros \
     ros-jazzy-pcl-conversions \
+    ros-jazzy-rtabmap-ros \
     libgflags-dev \
     libgoogle-glog-dev \
     libtbb-dev \
@@ -43,13 +44,16 @@ RUN git clone https://github.com/MIT-SPARK/TEASER-plusplus.git /tmp/teaser && \
 # 6. Set up the internal ROS 2 workspace
 WORKDIR /home/ros2_ws
 
-# 7. Copy your local ROS 2 source code into the image
+# 7. Copy your local ROS 2 source code into the image (Point-LIO, etc.)
 COPY ros2_dev/src /home/ros2_ws/src
 
-# 8. Compile the full C++ and Python workspace internally
+# 8. Clone KISS-ICP directly into the Docker workspace so it compiles with everything else
+RUN git clone https://github.com/PRBonn/kiss-icp.git /home/ros2_ws/src/kiss-icp
+
+# 9. Compile the full C++ and Python workspace internally
 RUN /bin/bash -c "source /opt/ros/jazzy/setup.bash && colcon build"
 
-# 9. Automatically source ROS 2 environments every time the container starts
+# 10. Automatically source ROS 2 environments every time the container starts
 RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
 RUN echo "source /home/ros2_ws/install/setup.bash" >> ~/.bashrc
 

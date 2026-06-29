@@ -12,6 +12,9 @@ fi
 BAG_PATH=$1
 BAG_NAME=$(basename "$BAG_PATH")
 
+# Open screen permissions safely for ALL local Docker containers (Rviz2 & FlexCloud)
+xhost +local:root > /dev/null
+
 echo "=========================================="
 echo "      PHASE 1: ROS 2 SLAM PIPELINE        "
 echo "=========================================="
@@ -20,7 +23,7 @@ echo "=========================================="
 sudo docker run --rm \
     --network=host \
     -e DISPLAY=$DISPLAY \
-    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     --privileged \
     -v "$BASE_DIR/rosbags:/home/ros2_ws/rosbags" \
     -v "$BASE_DIR/outputs:/home/ros2_ws/outputs" \
@@ -36,13 +39,10 @@ echo "=========================================="
 echo "      PHASE 2: FLEXCLOUD GEOREFERENCING   "
 echo "=========================================="
 
-# Open screen permissions for the FlexCloud Rerun Visualizer GUI
-xhost +
-
 sudo docker run --rm \
     --network=host \
     -e DISPLAY=$DISPLAY \
-    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     --privileged \
     -v /dev/shm:/dev/shm \
     -v "$BASE_DIR/:/datasets/" \
@@ -54,9 +54,6 @@ sudo docker run --rm \
         ./build/georeferencing /datasets/FlexCloud/config/georeferencing.yaml /datasets/outputs/positions_interpolated.txt /datasets/outputs/poses_keyframes.txt /datasets/outputs/sam-qn_finished.pcd \
     "
 
-# Close GUI permissions
-xhost -
-
 echo "=========================================="
 echo "      PHASE 3: CONVERTING TO LAS          "
 echo "=========================================="
@@ -66,6 +63,9 @@ sudo docker run --rm \
     -v "$BASE_DIR/outputs:/home/ros2_ws/outputs" \
     leo_rover_pipeline:latest \
     /bin/bash -c "python3 /home/ros2_ws/src/leo_rover_mapping/scripts/laz_converter.py"
+
+# Revoke GUI permissions to secure your host machine
+xhost -local:root > /dev/null
 
 echo "=========================================="
 echo "          PIPELINE  FINISHED!             "

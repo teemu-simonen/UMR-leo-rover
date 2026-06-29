@@ -19,6 +19,7 @@ def generate_launch_description():
             'config', 'unilidar_l2.yaml'
         ]),
         {
+            'use_sim_time': True,       # <--- ADDED THIS LINE FOR THE SLAM NODE
             'use_imu_as_input': False,  # Change to True to use IMU as input of Point-LIO
             'prop_at_freq_of_imu': True,
             'check_satu': True,
@@ -47,6 +48,8 @@ def generate_launch_description():
         package='rviz2',
         executable='rviz2',
         name='rviz',
+        # Added parameter block to sync RViz's clock with simulation time
+        parameters=[{'use_sim_time': True}], # <--- ADDED THIS FOR RVIZ TIMESTAMPS
         arguments=['-d', PathJoinSubstitution([
             FindPackageShare('point_lio'),
             'rviz_cfg', 'loam_livox.rviz'
