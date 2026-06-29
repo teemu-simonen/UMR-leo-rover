@@ -12,7 +12,7 @@ OUTPUT_DIR="$HOME/leo_rover_slam/outputs"
 
 # SOURCE YOUR KISS-ICP WORKSPACE
 source /opt/ros/jazzy/setup.bash
-source "$HOME/kiss_test/install/setup.bash"
+source "$HOME/leo_rover_slam/ros2_dev/install/setup.bash"
 
 echo "========================================"
 echo " 🚀 STARTING LEO ROVER MAPPING PIPELINE"
