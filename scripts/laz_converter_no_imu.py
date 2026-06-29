@@ -9,9 +9,9 @@ import pyproj
 import math
 
 # --- Setup Paths ---
-PCD_PATH = "/home/koneauto3/leo_rover_slam/outputs/rtabmap_cloud.pcd"
-JSON_PATH = "/home/koneauto3/leo_rover_slam/outputs/origin_metadata.json"
-OUTPUT_LAS = "/home/koneauto3/leo_rover_slam/outputs/final_georef_map.las"
+PCD_PATH = "/home/koneauto3/leo_rover_mapping_no_imu/outputs/rtabmap_cloud.pcd" 
+JSON_PATH = "/home/koneauto3/leo_rover_mapping_no_imu/outputs/origin_metadata.json"
+OUTPUT_LAS = "/home/koneauto3/leo_rover_mapping_no_imu/outputs/final_georef_map.las"
 
 def convert():
     # 1. Load the metadata

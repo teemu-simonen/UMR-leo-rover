@@ -1,47 +1,75 @@
-# Leo Rover SLAM & Georeferencing Pipeline
+# 🚀 Leo Rover SLAM Architecture
 
-A fully containerized, automated pipeline for processing LiDAR data, performing SLAM, and exporting georeferenced point clouds.
+## 1. Introduction
+This repository contains a high-performance 3D mapping pipeline for the Leo Rover. It is designed to support two hardware configurations:
+* **Point-LIO:** For rovers equipped with high-precision IMUs.
+* **KISS-ICP:** A robust LiDAR-odometry approach for rovers without IMUs.
 
-This project wraps complex C++ robotics algorithms, MIT mathematical libraries (TEASER++), and TUM's FlexCloud into a single, Docker environment. You do not need to install ROS 2 or any C++ dependencies to run this.
+This project is fully containerized using Docker to ensure consistent compilation across different computers. It automates the entire flow from raw ROS 2 bag files to georeferenced, terrain-aligned 3D point clouds.
 
-## 🚀 Features
-* **Phase 1 (SLAM):** Plays rosbags, processes LiDAR via SAM-QN, and tracks odometry.
-* **Phase 2 (FlexCloud):** Automatically rubber-sheets the local SLAM map to global GPS coordinates using keyframe interpolation.
-* **Phase 3 (Export):** Converts the final 3D map into a standard, uncompressed `.las` file for GIS LumiDB.
+---
 
-## 📋 Prerequisites
-You only need two things installed on your host machine:
-1. [Git](https://git-scm.com/)
-2. [Docker](https://docs.docker.com/engine/install/)
+## 2. Installation Instructions
+This pipeline requires a Linux environment (Ubuntu 24.04 recommended). 
 
-## 🛠️ Installation
-
-**1. Clone this repository to your dev pc:**
+### Setup Dependencies
+On a fresh computer, install the necessary tools:
 ```bash
+# Update and install Git
+sudo apt update && sudo apt install git -y
+
+# Install Docker
+curl -fsSL [https://get.docker.com](https://get.docker.com) -o get-docker.sh
+sudo sh get-docker.sh
+
+# Add user to Docker group (allows running without sudo)
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Clone the repository
 git clone https://github.com/teemu-simonen/UMR-leo-rover.git
 cd leo_rover_slam
+
+# This command installs all ROS 2 Jazzy dependencies and compiles the C++ SLAM nodes (Point-LIO, KISS-ICP, GTSAM, TEASER++).
+docker build -t leo_rover_slam .
 ```
+## 3. Data Collection on Leo Rover
+To ensure the pipeline generates accurate maps, please follow these collection guidelines:
+- Try to drive the rover as smoothly as possible, avoid tight turns
+- Enure that the rover antennas can see the sky to get gps data
+- To get the georeferencing as accurate as possible, at the beginning of a scan, try to drive north abou 10 meters
 
-## Usage
-
-### 1. Record a Lidar-rosbag using Leo-Rover:**
-**SSH into Leo-Rover Jetson Orin Nano:**
+To start all sensors and begin recording a rosbag:
 ```bash
-ssh iot@192.168.1.200
+# SSH Into the Leo-Rover Jetson.
+ssh <username>@<ip-address>
+cd leo-rover/unilidar_sdk2/unitree_lidar_ros2/
+source install/setup.bash
+
+# Launch, by defeault a rosbag will be recorded, set record:=false if you don't want to record a rosbag
+ros2 launch unitree_lidar_ros2 launch.py record:=true rosbag_name:=<your_rosbag_name>
+
+# When done Ctrl+C to end and save the rosbag
+
+#Copy the rosbag to your pc where you installed the SLAM-alghoritms, by default the rosbag will be saved on your pc in the rosbags folder in leo_rover_slam folder
+scp -r <jetson_username>@<Jetson_IP_Address>:~/leo-rover/rosbags/<rosbag_name> ~/leo_rover_slam/rosbags
 ```
 
-**Start recording Lidar-data and save it into a rosbag:**
+## 4. Mapping and Georeferencing
+There have been provided two ways to map the rosbag data, one if you have an imu avaivable and on without
 
+# IMU Mapping
 ```bash
-ros2 launch unitree_lidar_ros2 launch.py record:=true rosbag_name:=your rosbag name
+./run_mapping.sh /home/username/leo_rover_dist/rosbags/<rosbag_name>
 ```
-- ros2 launch unitree_lidar_ros2 launch.py - launch the Lidar
-- record:=true - Specify if you want to record a rosbag, set to false if no rosbag
-- rosbag_name:=<our rosbag name - specify rosbag name
-
-### 2. Copy the rosbag and run mapping pipeline
-**Run the following commands from dev pc**
-**Copy the rosbag**
+Enter the SLAM environment:
 ```bash
-scp -r iot@192.168.1.200:~/<filepath to rosbag>
+docker run -it --rm \
+  --net=host \
+  -v "$HOME/leo_rover_slam:/home/$USER/leo_rover_slam" \
+  -w "/home/$USER/leo_rover_slam" \
+  leo_rover_slam
+
+
 ```
+
