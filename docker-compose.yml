@@ -4,8 +4,10 @@ services:
     image: leo_rover_slam:latest
     network_mode: host
     volumes:
-      # Automatically mounts the cloned folder into the container
-      - ./:/home/koneauto3/leo_rover_slam
-    working_dir: /home/koneauto3/leo_rover_slam
+      # Mount ONLY the data and script folders to protect the container's compiled C++ code
+      - ./rosbags:/home/ros2_ws/rosbags
+      - ./outputs:/home/ros2_ws/outputs
+      - ./scripts:/home/ros2_ws/scripts
+    working_dir: /home/ros2_ws
     stdin_open: true # Keeps the terminal open (-i)
     tty: true        # Allocates a pseudo-TTY (-t)

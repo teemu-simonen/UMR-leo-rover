@@ -8,10 +8,18 @@ import json
 import pyproj
 import math
 
-# --- Setup Paths ---
-PCD_PATH = "/home/koneauto3/leo_rover_mapping_no_imu/outputs/rtabmap_cloud.pcd" 
-JSON_PATH = "/home/koneauto3/leo_rover_mapping_no_imu/outputs/origin_metadata.json"
-OUTPUT_LAS = "/home/koneauto3/leo_rover_mapping_no_imu/outputs/final_georef_map.las"
+from pathlib import Path
+
+# --- Setup Paths (Folder-Agnostic) ---
+# 1. Find the exact folder where this python script lives (.../scripts)
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+# 2. Go one level up to the main repo folder, then into /outputs
+BASE_DIR = SCRIPT_DIR.parent / "outputs"
+
+PCD_PATH = BASE_DIR / "rtabmap_cloud.pcd"  # (Or georef_sam-qn_finished.pcd for Point-LIO)
+JSON_PATH = BASE_DIR / "origin_metadata.json"
+OUTPUT_LAS = BASE_DIR / "final_georef_map.las"
 
 def convert():
     # 1. Load the metadata

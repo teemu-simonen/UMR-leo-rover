@@ -15,11 +15,15 @@ class UnifiedExporter(Node):
         super().__init__("unified_exporter_node")
         self.get_logger().info("GPS and ODOMETRY data exporting ACTIVE")
         
-        # --- Setup File Paths ---
-        self.base_dir = Path("/home/ros2_ws/outputs")
+# --- Setup File Paths (Folder-Agnostic) ---
+        # 1. Find the exact folder where this python script lives (.../scripts)
+        script_dir = Path(__file__).resolve().parent
+        
+        # 2. Go one level up to the main repo folder, then into /outputs
+        self.base_dir = script_dir.parent / "outputs"
+        
         self.gps_dir = self.base_dir / "gps_dir"
         self.odom_path = self.base_dir / "odometry.txt"
-
         # Clean old data to prevent ghosting
         if self.gps_dir.exists():
             shutil.rmtree(self.gps_dir)
