@@ -1,6 +1,6 @@
 # 🚀 Leo Rover SLAM Architecture
 
-## 1. Introduction
+## Introduction
 This repository contains a high-performance 3D mapping pipeline for the Leo Rover. It is designed to support two hardware configurations:
 * **Point-LIO:** For rovers equipped with high-precision IMUs.
 * **KISS-ICP:** A robust LiDAR-odometry approach for rovers without IMUs.
@@ -9,40 +9,40 @@ This project is fully containerized using Docker to ensure consistent compilatio
 
 ---
 
-## 2. Installation Instructions
+## 1. Installation Instructions
 This pipeline requires a Linux environment (Ubuntu 24.04 recommended). 
 
 ### Setup Dependencies
-On a fresh computer, install the necessary tools:
+You will need
+- Docker
+- Git
+
+### Clone the repository and build
 ```bash
-# Update and install Git
-sudo apt update && sudo apt install git -y
-
-# Install Docker
-curl -fsSL [https://get.docker.com](https://get.docker.com) -o get-docker.sh
-sudo sh get-docker.sh
-
-# Add user to Docker group (allows running without sudo)
-sudo usermod -aG docker $USER
-newgrp docker
-
-# Clone the repository
 git clone https://github.com/teemu-simonen/UMR-leo-rover.git
-cd leo_rover_slam
+cd UMR-leo-rover
 
-# This command installs all ROS 2 Jazzy dependencies and compiles the C++ SLAM nodes (Point-LIO, KISS-ICP, GTSAM, TEASER++).
-docker build -t leo_rover_slam .
+# Create the following directories
+mkdir -p rosbags outputs
+
+# Build the enviorement (may take about 10-20 minutes)
+docker compose build
+
+# Make the scripts executable
+chmod +x run_mapping.sh run_mapping_no_imu.sh scripts/internal_mapping_no_imu.sh
 ```
-## 3. Data Collection on Leo Rover
+
+
+## 2. Data Collection on Leo Rover
 To ensure the pipeline generates accurate maps, please follow these collection guidelines:
 - Try to drive the rover as smoothly as possible, avoid tight turns
 - Enure that the rover antennas can see the sky to get gps data
-- To get the georeferencing as accurate as possible, at the beginning of a scan, try to drive north abou 10 meters
+- To get the georeferencing as accurate as possible, at the beginning of a scan, try to drive north about 10 meters
 
 To start all sensors and begin recording a rosbag:
 ```bash
-# SSH Into the Leo-Rover Jetson.
-ssh <username>@<ip-address>
+# Conncet to RUTX11 5G Network and SSH Into the Leo-Rover Jetson.
+ssh <jetson-username>@<jetson-ip-address>
 cd leo-rover/unilidar_sdk2/unitree_lidar_ros2/
 source install/setup.bash
 
@@ -51,25 +51,29 @@ ros2 launch unitree_lidar_ros2 launch.py record:=true rosbag_name:=<your_rosbag_
 
 # When done Ctrl+C to end and save the rosbag
 
-#Copy the rosbag to your pc where you installed the SLAM-alghoritms, by default the rosbag will be saved on your pc in the rosbags folder in leo_rover_slam folder
-scp -r <jetson_username>@<Jetson_IP_Address>:~/leo-rover/rosbags/<rosbag_name> ~/leo_rover_slam/rosbags
 ```
 
 ## 4. Mapping and Georeferencing
+Copy the recorded rosbags from leo-rover Jetson
+```bash
+# By default the rosbag will be saved on your pc in the rosbags folder in leo_rover_slam folder
+scp -r <jetson_username>@<Jetson_IP_Address>:~/leo-rover/rosbags/<rosbag_name> ~/UMR-leo-rover/rosbags
+```
+
 There have been provided two ways to map the rosbag data, one if you have an imu avaivable and on without
 
-# IMU Mapping
+### IMU Mapping
 ```bash
-./run_mapping.sh /home/username/leo_rover_dist/rosbags/<rosbag_name>
+./run_mapping.sh rosbags/<YOUR_ROSBAG_NAME>
 ```
-Enter the SLAM environment:
+
+### No IMU Mapping
 ```bash
-docker run -it --rm \
-  --net=host \
-  -v "$HOME/leo_rover_slam:/home/$USER/leo_rover_slam" \
-  -w "/home/$USER/leo_rover_slam" \
-  leo_rover_slam
+./run_mapping_no_imu.sh rosbags/<YOUR_ROSBAG_NAME>
+```
 
-
+Sometimes there may be permission errors on the finished pointclouds in the outputs folder. To fix them, use the following command
+```bash
+sudo chown -R $USER:$USER outputs/
 ```
 
