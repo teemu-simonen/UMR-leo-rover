@@ -1,9 +1,7 @@
-# 🚀 Leo Rover SLAM Architecture
+# Leo Rover Mapping
 
 ## Introduction
 This repository contains a high-performance 3D mapping pipeline for the Leo Rover. It is designed to support two hardware configurations:
-* **Point-LIO:** For rovers equipped with high-precision IMUs.
-* **KISS-ICP:** A robust LiDAR-odometry approach for rovers without IMUs.
 
 This project is fully containerized using Docker to ensure consistent compilation across different computers. It automates the entire flow from raw ROS 2 bag files to georeferenced, terrain-aligned 3D point clouds.
 
