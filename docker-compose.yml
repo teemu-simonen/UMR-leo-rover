@@ -1,0 +1,11 @@
+services:
+  slam:
+    build: .
+    image: leo_rover_slam:latest
+    network_mode: host
+    volumes:
+      # Automatically mounts the cloned folder into the container
+      - ./:/home/koneauto3/leo_rover_slam
+    working_dir: /home/koneauto3/leo_rover_slam
+    stdin_open: true # Keeps the terminal open (-i)
+    tty: true        # Allocates a pseudo-TTY (-t)
