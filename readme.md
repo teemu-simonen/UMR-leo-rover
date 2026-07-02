@@ -75,3 +75,38 @@ Sometimes there may be permission errors on the finished pointclouds in the outp
 sudo chown -R $USER:$USER outputs/
 ```
 
+# Stereocamera
+To install stereocamera software, visit zedlab website and follow instructions:
+ [ Getting Started with your ZED camera ](https://support.stereolabs.com/hc/en-us/articles/207616785-Getting-Started-with-your-ZE).
+
+# Running stereocamera
+Build docker image
+```bash
+docker build -f Dockerfile.camera -t ghcr.io/haitomatic/jaska-dev:camera .
+
+# Run camera container:
+Bash 
+
+docker run -it --rm --name jaska_camera \ 
+  --gpus all \ 
+  --runtime=nvidia \ 
+  --privileged \ 
+  --network=host \ 
+  --ipc=host \ 
+  --pid=host \ 
+  -v /dev:/dev \ 
+  -v /tmp:/tmp \ 
+  -v /tmp/argus_socket:/tmp/argus_socket \ 
+  -v /var/nvidia/nvcam/settings/:/var/nvidia/nvcam/settings/ \ 
+  -v /usr/local/zed/resources:/usr/local/zed/resources \ 
+  -v /home/iot/haito_dev/zedx_recording:/Jaska/zedx_recording \ 
+  --entrypoint /bin/bash \ 
+  jaska-dev:camera-python
+
+# Test the camera
+python3 camera_test.py 
+
+# Start recording
+python3 record_svo2_zedx.py --output /Jaska/zedx_recording/<tallenteen nimi>.svo2 --compression H264 --no-preview 
+```
+Move the svo file to your dev pc with an nvidia gpu
